@@ -57,8 +57,11 @@ defaultImage = "default-image.png" # put in `./assets/images/`
 fillImage = "1270x740 Center" # normalize image size
 
 footer = """
-<div style="position: relative; z-index: 1000;">
-  <a class="text-muted" href="https://portfolio.eunus.dev/">Mohammad Eunus</a> © 2025 |
+<div style=\"position: relative; z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;\">
+  <a class=\"text-muted\" href=\"https://portfolio.eunus.dev/\" style=\"display: flex; align-items: center; gap: 7px; text-decoration: none; font-weight: 500; color: #333;\">
+    <img src=\"/images/favicon-rtl.png\" style=\"height:25px;width:auto;vertical-align:middle;border-radius:5px;box-shadow:0 1px 4px #0001;\">
+    Mohammad Eunus
+  </a>
   <a href="https://github.com/mohammadeunus" target="_blank" style="margin: 0 5px; position: relative;" aria-label="GitHub">
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
       <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
