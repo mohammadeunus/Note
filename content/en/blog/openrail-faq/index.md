@@ -1,22 +1,20 @@
 ---
-title: "Building a Custom Subscription System with ABP Framework and Stripe: A Developer's Journey 🚀"
-description: "A deep dive into building a flexible, dynamic subscription system using ABP Framework and Stripe, including architecture, code, and lessons learned."
-excerpt: "How I built a custom, dynamic SaaS subscription system with ABP Framework and Stripe."
+title: "Custom SaaS Subscription System: ABP Framework"
+description: "A deep dive into building a flexible, dynamic subscription system using ABP Framework, including architecture, code, and lessons learned."
+excerpt: "How I built a custom, dynamic SaaS subscription system with ABP Framework."
 date: 2020-11-04T09:19:42+01:00
 lastmod: 2020-11-04T09:19:42+01:00
 draft: false
 weight: 50
 images: []
 categories: ["Development", "SaaS", "ABP Framework"]
-tags: ["Stripe", "ABP Framework", "Custom Plans", "SaaS", "Payments"]
+tags: ["ABP Framework", "Custom Plans", "SaaS", "Payments"]
 contributors: ["Henk Verlinde"]
 pinned: false
 homepage: false
 ---
 
-# Building a Custom Subscription System with ABP Framework and Stripe: A Developer's Journey 🚀
-
-Finally got a chance to integrate Stripe into a system! I have been longing to fill up this empty section of my knowledge for a long time. When my client approached me with a unique requirement - they wanted to offer custom subscription plans instead of the standard "one-size-fits-all" packages - I knew this was the perfect opportunity to dive deep into ABP Framework's payment system and create something truly flexible.
+Finally got a chance to build a custom subscription system! I have been longing to fill up this empty section of my knowledge for a long time. When my client approached me with a unique requirement - they wanted to offer custom subscription plans instead of the standard "one-size-fits-all" packages - I knew this was the perfect opportunity to dive deep into ABP Framework's payment system and create something truly flexible.
 
 ## The Challenge: Custom Subscription Plans 🎯
 
@@ -56,31 +54,30 @@ var planPayload = new
 };
 
 // First, create the plan in our system
-await nTouch.pMS.core.subscriptions.tenantSubscription.createPlan(planPayload);
+await subscriptionService.createPlan(planPayload);
 
-// Then create the subscription and get Stripe session
-const result = await nTouch.pMS.core.subscriptions.tenantSubscription.createSubscriptionAndTenant(payload);
+// Then create the subscription and get payment session
+const result = await subscriptionService.createSubscriptionAndTenant(payload);
 ```
 
 ### 3. The Payment Flow Magic 💫
 This is where it gets really interesting. We're essentially doing this:
 
 1. **User customizes their plan** → We calculate the price
-2. **Create a plan in Stripe** → Dynamic plan creation
-3. **Create a plan in our system** → ABP plan management
-4. **Create a subscription request** → Track the payment
-5. **Create a tenant with a "blank" edition** → No features yet
-6. **Redirect to Stripe** → User pays
-7. **Webhook processes payment** → We activate the features
+2. **Create a plan in our system** → ABP plan management
+3. **Create a subscription request** → Track the payment
+4. **Create a tenant with a "blank" edition** → No features yet
+5. **Process payment** → User pays
+6. **Activate features** → We activate the features
 
 It's like a three-step dance: Plan → Pay → Activate. 💃
 
 ## The Technical Deep Dive 🔧
 
-### PrePayment Stage: Setting Up the Dance
+### Payment Processing: Setting Up the Dance
 ```csharp
 // In PrePayment.cshtml.cs
-StartResult = await PaymentRequestAppService.StartAsync(StripeConsts.GatewayName, new PaymentRequestStartDto
+StartResult = await PaymentRequestAppService.StartAsync(GatewayName, new PaymentRequestStartDto
 {
     ReturnUrl = PaymentWebOptions.Value.RootUrl.RemovePostFix("/") + 
                "/api/core/tenant-subscription/complete-payment/{CHECKOUT_SESSION_ID}",
@@ -89,12 +86,12 @@ StartResult = await PaymentRequestAppService.StartAsync(StripeConsts.GatewayName
 });
 ```
 
-### The Webhook: Where the Magic Happens ✨
+### Payment Completion: Where the Magic Happens ✨
 ```csharp
-// In StripePaymentGateway.cs
+// In PaymentGateway.cs
 public virtual async Task<bool> CompleteAsync(PaymentRequest paymentRequest, Dictionary<string, string> extraData)
 {
-    var sessionId = extraData[StripeConsts.ParameterNames.SessionId];
+    var sessionId = extraData[ParameterNames.SessionId];
     var sessionService = new SessionService();
     var session = await sessionService.GetAsync(sessionId);
     
@@ -114,7 +111,7 @@ public virtual async Task<bool> CompleteAsync(PaymentRequest paymentRequest, Dic
 Now, let me address something important - security. When I first started this project, I was like "Oh, this is going to be a security nightmare." But here's what we did right:
 
 1. **Server-side plan creation** - No sensitive data exposed to client
-2. **Webhook verification** - Stripe signs the webhooks, we verify them
+2. **Payment verification** - We verify all payment data
 3. **Tenant isolation** - Each tenant gets their own isolated environment
 4. **Payment verification** - We double-check the payment status before activating features
 
@@ -123,18 +120,18 @@ Now, let me address something important - security. When I first started this pr
 You know what's the most challenging part? Edge cases. Here are some we had to think about:
 
 - **What if payment fails?** → We clean up the created tenant
-- **What if webhook fails?** → We have retry mechanisms
+- **What if payment processing fails?** → We have retry mechanisms
 - **What if user cancels?** → We handle the cancellation gracefully
-- **What if Stripe is down?** → We have fallback mechanisms
+- **What if payment gateway is down?** → We have fallback mechanisms
 
 ## The Performance Optimizations ⚡
 
 Creating plans dynamically sounds expensive, right? Well, we optimized it:
 
 1. **Caching** - We cache frequently requested plan combinations
-2. **Async processing** - Webhook processing is completely async
+2. **Async processing** - Payment processing is completely async
 3. **Database optimization** - We use efficient queries for plan creation
-4. **Stripe session management** - We handle session expiration properly
+4. **Session management** - We handle session expiration properly
 
 ## The Result: A Flexible, Scalable System 🎉
 
@@ -148,7 +145,7 @@ What we ended up with is a system that:
 ## Lessons Learned 📚
 
 1. **ABP Framework is powerful** - But you need to understand its conventions
-2. **Stripe webhooks are reliable** - But always verify them
+2. **Payment processing is reliable** - But always verify payments
 3. **Dynamic plan creation is complex** - But totally worth it
 4. **Security should be built-in** - Not added later
 
@@ -163,14 +160,14 @@ async function handleCustomPlanPayment() {
         window.LoadingScreen.show();
         
         // Step 1: Create the plan
-        const planResult = await nTouch.pMS.core.subscriptions.tenantSubscription.createPlan(planPayload);
+        const planResult = await subscriptionService.createPlan(planPayload);
         
-        // Step 2: Create subscription and get Stripe session
-        const subscriptionResult = await nTouch.pMS.core.subscriptions.tenantSubscription.createSubscriptionAndTenant(payload);
+        // Step 2: Create subscription and get payment session
+        const subscriptionResult = await subscriptionService.createSubscriptionAndTenant(payload);
         
-        // Step 3: Redirect to Stripe
-        const stripe = Stripe(publishableKey);
-        const { error } = await stripe.redirectToCheckout({
+        // Step 3: Redirect to payment gateway
+        const paymentGateway = PaymentGateway(publishableKey);
+        const { error } = await paymentGateway.redirectToCheckout({
             sessionId: subscriptionResult.sessionId
         });
         
@@ -197,7 +194,7 @@ If you're reading this and thinking "This is exactly what I need, but I don't ha
 
 The key is understanding both the technical requirements and the business logic. It's not just about writing code - it's about creating a system that grows with your business.
 
-So there you have it - a complete custom subscription system built on ABP Framework with Stripe integration. From dynamic plan creation to secure payment processing, this system handles it all while maintaining the flexibility your customers demand.
+So there you have it - a complete custom subscription system built on ABP Framework. From dynamic plan creation to secure payment processing, this system handles it all while maintaining the flexibility your customers demand.
 
 Remember, in the world of SaaS, flexibility is king. And with this system, you're not just selling software - you're selling solutions that fit perfectly into your customers' workflows. 👑
 
