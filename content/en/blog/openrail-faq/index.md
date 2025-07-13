@@ -2,8 +2,8 @@
 title: "Custom SaaS Subscription System: ABP Framework"
 description: "A deep dive into building a flexible, dynamic subscription system using ABP Framework, including architecture, code, and lessons learned."
 excerpt: "How I built a custom, dynamic SaaS subscription system with ABP Framework."
-date: 2020-11-04T09:19:42+01:00
-lastmod: 2020-11-04T09:19:42+01:00
+date: 2025-07-14T00:00:00+06:00
+lastmod: 2025-07-14T00:00:00+06:00
 draft: false
 weight: 50
 images: []
