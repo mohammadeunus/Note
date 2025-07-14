@@ -19,7 +19,7 @@ This post is based on real scenarios I’ve encountered. Each principle comes wi
 
 ---
 
-### 🔹 Single Responsibility Principle (SRP)
+## Single Responsibility Principle (SRP)
 
 One of the clearest signs of an SRP violation in real-world code is when a class constructor takes **too many dependencies**. A common rule of thumb:
 
@@ -79,24 +79,23 @@ This results in a **cleaner, testable, and more maintainable** codebase that ali
 
 ---
 
-### 🔹 Open/Closed Principle (OCP)
+## Open/Closed Principle (OCP)
 
 👉 *[Content coming soon]*
 
 ---
 
-### 🔹 Liskov Substitution Principle (LSP)
+## Liskov Substitution Principle (LSP)
 
 👉 *[Content coming soon]*
 
 ---
 
-### 🔹 Interface Segregation Principle (ISP)
+## Interface Segregation Principle (ISP)
 
 One common pattern I’ve come across (even from senior developers) is the misuse of **overloaded, do-everything methods** with too many optional or nullable parameters. Here's how the same overloaded method is used in two different real-world scenarios in my system:
 
-
-#### Why is This Bad? (ISP Violation)
+### Why is This Bad? (ISP Violation)
 
 - **Clients are forced to know about everything:**
   If you just want to make a simple payment, you still have to know about insurance, vouchers, and more.
@@ -157,7 +156,7 @@ var payment = await paymentManger.CreateAsync(
 
 > That’s over 20 parameters! Some are only used for insurance payments, some for vouchers, some for regular payments. Most of the time, you’ll be passing null or default values for things you don’t care about.
 
-#### How to Fix It (Applying ISP)
+### How to Fix It (Applying ISP)
 
 **Step 1: Split the Interface**
 Instead of one big method, create smaller, focused interfaces for each payment scenario:
@@ -181,7 +180,7 @@ var payment = await paymentService.CreateCashAsync(booking, amount, paidOn);
 
 No more null or irrelevant parameters!
 
-##### DDD (Domain-Driven Design) Issues
+#### DDD (Domain-Driven Design) Issues
 This “fat” service also violates DDD best practices:
 - It mixes different business processes in one method.
 - It doesn’t use expressive domain models or aggregates.
@@ -190,7 +189,7 @@ But the main focus here is: **Don’t make your interfaces “fat.” Keep them 
 
 ---
 
-### 🔹 Dependency Inversion Principle (DIP)
+## Dependency Inversion Principle (DIP)
 
 In ABP modular monolith architecture, one rule is clear: **Core modules must never reference their child modules.** The Core should be reusable and independent.
 
