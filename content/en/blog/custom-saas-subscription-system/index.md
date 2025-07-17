@@ -16,6 +16,29 @@ homepage: false
 
 Finally got a chance to build a custom subscription system! I have been longing to fill up this empty section of my knowledge for a long time. When my client approached me with a unique requirement - they wanted to offer custom subscription plans instead of the standard "one-size-fits-all" packages - I knew this was the perfect opportunity to dive deep into ABP Framework's payment system and create something truly flexible.
 
+## How ABP Payment Works ✅
+
+In ABP’s SaaS edition, when a customer subscribes to a 1-year plan, their tenant account is activated with the selected edition and features for exactly 12 months. If the subscription is not renewed, it is marked as expired. After a configurable grace period, access is automatically restricted or disabled. This ensures that only customers with active subscriptions can continue using the system.
+
+## How Our Goal Differs 🔄
+
+ABP provides a plan-based subscription model where predefined plans are created by the platform owner (e.g., Super Admin), and customers subscribe to one of those plans.
+
+In contrast, our goal is to let customers create their own plans based on their specific needs—customizing features, modules, or usage limits before subscribing.
+
+## How We’ll Achieve This 🛠
+
+ABP already provides essential features that align with our needs:
+
+- Automatic access restriction if a customer fails to renew.
+- Built-in subscription management and payment gateway integration via the admin panel.
+
+However, to meet our goal, we will:
+
+- Modify parts of the existing subscription workflow.
+- Allow plan creation dynamically when a customer configures their subscription from the public website.
+- Automatically generate a corresponding payment request and link it to the custom plan.
+
 ## The Challenge: Custom Subscription Plans 🎯
 
 Traditional SaaS platforms offer predefined packages like "Standard," "Professional," and "Enterprise." But my client wanted something different - a system where customers could pick and choose exactly what they needed. Think of it like building your own pizza - you get to choose every single topping, and you only pay for what you want.
@@ -38,27 +61,10 @@ It's like a shopping cart, but for software features. Pretty cool, right?
 ### 2. The Dynamic Plan Creation Process 🔄
 Here's the genius part - instead of having predefined plans, we create them dynamically:
 
-```csharp
-// When user submits their custom plan
-var planPayload = new
-{
-    isMonthly = !priceSwitch.prop('checked'),
-    roomCount = rooms,
-    hotelCount = hotels,
-    subscribedFeatures = selectedFeatures,
-    saasTenant = {
-        name = tenantName,
-        adminEmailAddress = adminEmail,
-        adminPassword = adminPassword
-    }
-};
-
-// First, create the plan in our system
-await subscriptionService.createPlan(planPayload);
-
-// Then create the subscription and get payment session
-const result = await subscriptionService.createSubscriptionAndTenant(payload);
-```
+Instead of showing code, here's how it works:
+- When a user submits their custom plan, we collect their selections (features, rooms, hotels, etc.) and tenant details.
+- The system creates a new plan in the backend based on these selections.
+- After the plan is created, a subscription and payment session are generated and linked to the new plan.
 
 ### 3. The Payment Flow Magic 💫
 This is where it gets really interesting. We're essentially doing this:
@@ -75,36 +81,16 @@ It's like a three-step dance: Plan → Pay → Activate. 💃
 ## The Technical Deep Dive 🔧
 
 ### Payment Processing: Setting Up the Dance
-```csharp
-// In PrePayment.cshtml.cs
-StartResult = await PaymentRequestAppService.StartAsync(GatewayName, new PaymentRequestStartDto
-{
-    ReturnUrl = PaymentWebOptions.Value.RootUrl.RemovePostFix("/") + 
-               "/api/core/tenant-subscription/complete-payment/{CHECKOUT_SESSION_ID}",
-    CancelUrl = PaymentWebOptions.Value.RootUrl,
-    PaymentRequestId = PaymentRequestId
-});
-```
+Instead of code, here's the process:
+- When a user is ready to pay, the backend starts a payment session with the selected gateway.
+- The system sets up return and cancel URLs for the payment process.
+- A payment request is created and tracked for the session.
 
 ### Payment Completion: Where the Magic Happens ✨
-```csharp
-// In PaymentGateway.cs
-public virtual async Task<bool> CompleteAsync(PaymentRequest paymentRequest, Dictionary<string, string> extraData)
-{
-    var sessionId = extraData[ParameterNames.SessionId];
-    var sessionService = new SessionService();
-    var session = await sessionService.GetAsync(sessionId);
-    
-    if (session.PaymentStatus == "paid")
-    {
-        // Now we create the actual edition with the features the user paid for
-        await CreateCustomEditionForPaymentRequest(paymentRequest);
-        return true;
-    }
-    
-    return false;
-}
-```
+Process overview:
+- After payment, the system verifies the payment status with the gateway.
+- If payment is successful, the system creates the actual edition with the features the user paid for and activates the subscription.
+- If payment fails, the process is halted and the tenant is not activated.
 
 ## The Security Considerations 🔒
 
@@ -151,36 +137,13 @@ What we ended up with is a system that:
 
 ## The Code That Makes It All Work 💻
 
-Here's a snippet of the core logic that ties everything together:
-
-```javascript
-// The complete flow in one function
-async function handleCustomPlanPayment() {
-    try {
-        window.LoadingScreen.show();
-        
-        // Step 1: Create the plan
-        const planResult = await subscriptionService.createPlan(planPayload);
-        
-        // Step 2: Create subscription and get payment session
-        const subscriptionResult = await subscriptionService.createSubscriptionAndTenant(payload);
-        
-        // Step 3: Redirect to payment gateway
-        const paymentGateway = PaymentGateway(publishableKey);
-        const { error } = await paymentGateway.redirectToCheckout({
-            sessionId: subscriptionResult.sessionId
-        });
-        
-        if (error) {
-            console.error('Payment failed:', error);
-        }
-    } catch (error) {
-        console.error('Plan creation failed:', error);
-    } finally {
-        window.LoadingScreen.hide();
-    }
-}
-```
+Instead of sharing code, here's the high-level flow:
+- Show a loading screen while processing.
+- Step 1: Create the plan based on user input.
+- Step 2: Create the subscription and initiate the payment session.
+- Step 3: Redirect the user to the payment gateway for checkout.
+- If payment fails, show an error message. If successful, activate the subscription and features.
+- Hide the loading screen when done.
 
 ## Conclusion: Why This Matters 🌟
 
