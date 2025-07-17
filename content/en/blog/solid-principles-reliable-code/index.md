@@ -41,6 +41,20 @@ public class TenantSubscriptionAppService(
     ICostCalculationService costCalculationService,
     IRepository<Subscription, Guid> Repository)
     : ApplicationService, ITenantSubscriptionAppService
+{
+    public async Task<SubscriptionResult> CreateTenantSubscriptionAsync(CreateTenantSubscriptionInput input)
+    {
+        // Before refactoring, this method was 444 lines long, handling everything from validation,
+        // payment processing, cost calculation, to event dispatching. It was hard to read and maintain.
+ 
+        return new SubscriptionResult
+        {
+            Success = true,
+            PaymentPlanId = paymentPlan.Id,
+            SubscriptionRequestId = subscriptionRequest.Id
+        };
+    }
+}
 ```
 
 Look at that constructor! That's like 13 different services being injected. It's like trying to build a Swiss Army knife, but instead of being useful, it's just confusing and hard to maintain. 😵‍💫
@@ -71,6 +85,40 @@ public class TenantSubscriptionAppService(
     ICostCalculationService costCalculationService,
     IRepository<SubscriptionRequest, Guid> subscriptionRequestRepository)
     : ApplicationService, ITenantSubscriptionAppService
+{
+    public async Task<SubscriptionResult> CreateTenantSubscriptionAsync(CreateTenantSubscriptionInput input)
+    {
+        // After refactoring, each responsibility is delegated to focused services, making the code clean and readable.
+
+        // Validate tenant
+        var tenant = await tenantRepository.GetAsync(input.TenantId);
+   
+        // Calculate cost
+        var cost = await costCalculationService.CalculateAsync(input.PlanId, input.Options);
+
+        // Create payment plan
+        var paymentPlan = await paymentPlanService.CreateAsync(input.TenantId, input.PlanId, cost);
+
+        // Save subscription request
+        var subscriptionRequest = new SubscriptionRequest
+        {
+            TenantId = input.TenantId,
+            PlanId = input.PlanId,
+            Cost = cost,
+            CreatedAt = Clock.Now
+        };
+        await subscriptionRequestRepository.InsertAsync(subscriptionRequest);
+
+        // (Other responsibilities are handled by their respective services)
+
+        return new SubscriptionResult
+        {
+            Success = true,
+            PaymentPlanId = paymentPlan.Id,
+            SubscriptionRequestId = subscriptionRequest.Id
+        };
+    }
+}
 ```
 
 Now we're talking! 🎉 This class has a clear, single responsibility: **orchestrating tenant subscriptions**. It delegates the complex stuff to focused services like `IPaymentPlanService`.
